@@ -1,0 +1,126 @@
+function create_cookie(name, value, days, basedomain) {
+    try {
+        var cookieDomain = "";
+        if (basedomain && basedomain != "") {
+            cookieDomain = "; domain=." + basedomain;
+        }
+
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            var expires = "; expires=" + date.toGMTString();
+        }
+        else var expires = "";
+        document.cookie = name + "=" + value + expires + "; path=/" + cookieDomain;
+    }
+    catch (error) {
+        //if (__DIGIOHFB__ShowErrors) alert(error.message + " FB__create_cookie");
+    }
+}
+
+function read_cookie(name) {
+    try {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+    catch (error) {
+        //if (__DIGIOHFB__ShowErrors) alert(error.message + " FB__read_cookie");
+    }
+}
+
+function erase_cookie(name) {
+    try {
+        create_cookie(name, "", -1);
+    }
+    catch (error) {
+        //if (__DIGIOHFB__ShowErrors) alert(error.message + " FB__erase_cookie");
+    }
+}
+
+var digioh_wix_cookie_name = '';
+var show_errors = true;
+
+function setCookieName(partner_b, product_type, instance_id, widget_id) {
+    digioh_wix_cookie_name = "digioh__wix__" + partner_b + "__" + product_type + "__" + instance_id + "__" + widget_id;
+    //var timestamp = new Date().getTime() + (Math.random() * 100000000);
+}
+
+function setCookieEvent(eventKey, eventValue) {
+    try {
+        var cookieName = digioh_wix_cookie_name;
+        var cookieVal = read_cookie(cookieName);
+
+        var timestamp = new Date().getTime() + "";
+
+        var current_url = "";
+        if (document.location.href) {
+            current_url = document.location.href;
+        }
+
+        if (cookieVal != null && cookieVal.length > 0) {
+            if (cookieVal.indexOf("|") !== -1) {
+                var events = cookieVal.split("|");
+                var event;
+                var foundEventIdx = -1;
+                for (var i = 0; i < events.length; i++) {
+                    event = events[i].split(":");
+                    if (event[0] == eventKey) {
+                        foundEventIdx = i;
+                        break;
+                    }
+                }
+                if (foundEventIdx >= 0) {
+                    events[foundEventIdx] = eventKey + ":" + eventValue + ":" + timestamp;
+                    cookieVal = events.join("|");
+                } else {
+                    cookieVal += "|" + eventKey + ":" + eventValue + ":" + timestamp;
+                }
+            } else if (cookieVal.indexOf(":") !== -1 && cookieVal.split(":")[0] == eventKey) {
+                cookieVal = eventKey + ":" + eventValue + ":" + timestamp;
+            } else {
+                cookieVal += "|" + eventKey + ":" + eventValue + ":" + timestamp;
+            }
+        } else {
+            cookieVal = eventKey + ":" + eventValue + ":" + timestamp;
+        }
+
+        create_cookie(cookieName, cookieVal, 365);
+    }
+    catch (error) {
+        if (show_errors) console.log(error.message + " setCookieEvent");
+    }
+}
+
+function getCookieEvent(eventKey) {
+    try {
+        var cookieName = digioh_wix_cookie_name;
+        var cookieVal = read_cookie(cookieName);
+
+        if (cookieVal != null && cookieVal.length > 0) {
+            if (cookieVal.indexOf("|") !== -1) {
+                var events = cookieVal.split("|");
+                var event;
+                var foundEventIdx = -1;
+                for (var i = 0; i < events.length; i++) {
+                    event = events[i].split(":");
+                    if (event[0] == eventKey) {
+                        return events[i];
+                    }
+                }
+            } else if (cookieVal.indexOf(":") !== -1 && cookieVal.split(":")[0] == eventKey) {
+                return cookieVal;
+            }
+        } 
+    }
+    catch (error) {
+        if (show_errors) console.log(error.message + " getCookieEvent");
+    }
+
+    return null;
+}
